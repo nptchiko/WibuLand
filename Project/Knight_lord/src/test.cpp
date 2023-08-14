@@ -1,7 +1,7 @@
 #include "bin/knight.h"
 #include "bin/backpack.h"
 #include "bin/monster.h"
-
+"ddang pha ne"
 
 void gotoxy(short x, short y){
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
