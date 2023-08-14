@@ -1,0 +1,1 @@
+g++ -g -o main test.cpp -I . -std=c++11
