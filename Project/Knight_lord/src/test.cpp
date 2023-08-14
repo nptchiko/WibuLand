@@ -2,7 +2,6 @@
 #include "bin/backpack.h"
 #include "bin/monster.h"
 
-
 void gotoxy(short x, short y){
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     COORD a = {x, y}; SetConsoleCursorPosition(h, a);
