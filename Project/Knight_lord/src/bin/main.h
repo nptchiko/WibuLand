@@ -130,6 +130,19 @@ vector<string> frame15 = { " "," "," "," ",
          "    O" ,
          " --[|]--" ,
          "   / \\ " };
+class Attribute;
+class Knight;
+class Monster;
+class NPC;
+
+class Item;
+class Potion;
+class ItemMangager;
+
+class Object;
+class MainCharacter;
+class Bullet;
 class Knight;
 
+class Game;
 #endif //KNIGHT.H
