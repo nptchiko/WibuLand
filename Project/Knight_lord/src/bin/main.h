@@ -18,7 +18,7 @@ using namespace std;
 #define SCREEN_W 72
 #define SCREEN_H 24
 
-#define NUM 4
+#define NUM 2
 
 #define Model_b_X_Length 1
 #define Model_b_Y_Length 1
@@ -31,7 +31,7 @@ using namespace std;
 char modelBl[Model_b_Y_Length][Model_b_X_Length] = {{'v'}};
 
 const char *Event_Name[] = {"", "MadBear", "Bandit", "LordLupin", "Elf", "Troll",
-                             "Shaman", "Siren_Vajsh" ,"Asclepius", "Merlin", "Bowser" , "MushMario", "MushFibo", "MushGhost", "Aspirin", "MaidenKiss", "PhoenixDown","Antidote"};
+                             "Shaman", "Siren_Vajsh" ,"Asclepius", "Merlin", "Bowser" , "MushAttack", "Mushroom", "MushGhost", "Aspirin", "MaidenKiss", "PhoenixDown","Antidote"};
 char modelMC[Model_c_Y_Length][Model_c_X_Length] = {{' ','_','_',' '},
                                                   {'|',':','3','|'}};
 
@@ -130,5 +130,6 @@ vector<string> frame15 = { " "," "," "," ",
          "    O" ,
          " --[|]--" ,
          "   / \\ " };
+class Knight;
 
 #endif //KNIGHT.H

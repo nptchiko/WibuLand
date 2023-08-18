@@ -33,12 +33,11 @@ class ItemManager{
         Item* findItem(Item* item);
         void addItem(Item* item);   
         void removeItem(Item* item);
-        void showItems();
+        void showItems(Knight* knight);
 };
 
 class Attribute{
     public:   
-
         int MaxHP;
         int HP;
         int level;
@@ -65,14 +64,14 @@ class Knight : public Attribute{
     
     public: 
 
-        static Knight * create(); 
+        static Knight * init(); 
         
         string getStatus() const;
 
         bool isPoisoned();
         bool isFrogged();
         bool getSmallen();
-        void Status(Item* item); 
+        void Status(); 
         void useItem(Item* item_to_use, ItemManager* balo); 
         void revieve(ItemManager* balo);  
         
@@ -117,11 +116,11 @@ class MainCharacter : public Object {
         MainCharacter(){};
         ~MainCharacter(){};
 
-        static MainCharacter* create();
+        static MainCharacter* init();
     
         void draw() const;
         void erase() const;
-
+        friend class Game;
 };
 class Bullet : public Object {
    private:
@@ -134,7 +133,7 @@ class Bullet : public Object {
         Bullet(){};
         ~Bullet(){};
 
-        static Bullet* create();   
+        static Bullet* init();   
         
         void draw() const;
         void erase() const;
@@ -164,5 +163,5 @@ void setcursor(bool visible, DWORD size);
 void TextColor(int x);
 void gotoxy(short x, short y);
 
-Knight* knight = Knight::create();
+Knight* knight = Knight::init();
 #endif
