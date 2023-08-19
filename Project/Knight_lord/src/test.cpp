@@ -77,6 +77,8 @@ void ItemManager::showItems(Knight* knight){
     vector<vector<string>> page(num_page - 1, vector<string>(6, ""));
     page.push_back(vector<string>(item_per_page[num_page-1], ""));
 
+    Game::cleanBoard(4, 10, 68, 15);
+
     for(int i = 0; i < num_page; ++i){
         for(int j = 0; j < item_per_page[i]; j++){
             page[i][j] = "*" + items[nth]->name + " X" + to_string(items[nth]->quantity);
@@ -99,7 +101,7 @@ void ItemManager::showItems(Knight* knight){
         if(i){ if(j == 2) j = 0; else{ j++; i = 0;} } else i++;
     }
 // show all page
-    char c; int choice = 1, currentPage = 0, previousPage = currentPage;
+    int choice = 0, currentPage = 0, previousPage = currentPage;
     int pos_x = 0, pos_y = 0, max_pos_x[num_page], max_pos_y[num_page];
 
     for(int i = 0; i< num_page; i++){
@@ -165,6 +167,9 @@ void ItemManager::showItems(Knight* knight){
             } else pos_y++;
         }
         if(c == 13) break;
+        if(c == 27){
+            knight->turn = 1; return;
+        }
        
         if(previousPage != currentPage) Game::cleanBoard(4, 10, 68, 15);
 
@@ -183,7 +188,7 @@ void ItemManager::showItems(Knight* knight){
  
     }
     
-    knight->useItem(items[choice], backpack);
+    knight->useItem(this->items[choice], backpack);
     
 }
 /* * * BEGIN OF ATTRIBUTE CLASS * * */
@@ -202,93 +207,105 @@ Knight* Knight::init(){
     return knight;
 }
 
-bool Knight::isPoisoned(){
+void Knight::isPoisoned(){
     
-    if(!poisoned){          
+    if(!this->poisoned){          
         
-        poisoned = 3; frog = 0; tiny = 0;
-        currentStatus = "poisoned"; hasDebuff = true;
+        this->poisoned = 3; this->frog = 0; tiny = 0;
+        currentStatus = 'p'; hasDebuff = true;
         gotoxy(8, 4); cout << "@v@";
-        return 1;
+        
     }
-    return 0;
-}
-bool Knight::isFrogged(){
     
-    if(!frog){
-
-        poisoned = 0; frog = 3; tiny = 0;
-        tempValue = level; level = 1;
-        hasDebuff = true; currentStatus = "Frog";
-
-        return 1;
-    } 
-    return 0;
 }
-bool Knight::getSmallen(){
+void Knight::isFrogged(){
+    
+    if(!this->frog){
+
+        this->poisoned = 0; this->frog = 3; tiny = 0;
+        tempValue = level; level = 1;
+        hasDebuff = true; currentStatus = 'f';
+    } 
+
+}
+void Knight::getSmallen(){
     
     if(!tiny){
         
-        poisoned = 0; frog = 0; tiny = 3;
+        this->poisoned = 0; this->frog = 0; tiny = 3;
         tempValue = HP; 
-        hasDebuff = true;  currentStatus = "Tiny";
+        hasDebuff = true;  currentStatus = 't';
 
         if(HP <= 5) HP = 1;  else HP /= 5;
-
-        return 1;  
+  
     } 
-    return 0;
-}
-string Knight::getStatus() const {
-    
-    return currentStatus;
+
 }
 void Knight::Status(){
-    
-    if(poisoned > 1){ poisoned--; HP -= 5;}
-    else {
-            poisoned--;
-            hasDebuff = false;  
-            currentStatus = "Normal";
-        }
-       
-    if(frog > 1) frog--;
-    else {
-            frog--;
-            level = tempValue;
-            hasDebuff = false; 
-            currentStatus = "Normal"; 
-    } 
-    if(tiny > 1) tiny--;
-    else {
-            tiny--;
-            HP *= 5; 
-            hasDebuff = false;   
-            currentStatus = "Normal";
-        }               
+  
+    switch(currentStatus){
+        case 'p':
+            
+            if(this->poisoned > 1){
+                this->poisoned--; HP -= 5;
+            } else {
+                this->poisoned = 0;
+                hasDebuff = false;  
+                currentStatus = 'n';
+            }
+        break;
+
+        case 'f':
+
+            if(this->frog > 1)
+                this->frog--;
+            else {
+                level = tempValue;
+                hasDebuff = false; 
+                currentStatus = 'n';
+                this->frog = 0;
+            } 
+        break;
+
+        case 't':
+      
+            if(this->tiny > 1)
+                tiny--;
+            else {
+                    HP *= 5; 
+                    hasDebuff = false;   
+                    currentStatus = 'n';
+                    this->tiny = 0;
+            }
+        break;             
+    }
 }
 void Knight::useItem(Item* item_to_use, ItemManager* balo){
     if(!item_to_use || balo->items.empty()) return;
         
     string s = item_to_use->name; Item* temp = balo->findItem(item_to_use);
 
-    if(s == "Antidote"){
-        poisoned = 0;  hasDebuff = false;
-        currentStatus = "normal"; gotoxy(8,4); cout << "'v'";
-    } else if(s == "Maidenkiss"){
-        level = tempValue;
-            hasDebuff = false; 
-            currentStatus = "Normal"; 
-    } else if(s == "MushMario"){
-            HP *= 5; 
-            hasDebuff = false;   
-            currentStatus = "Normal";
+    Game::cleanBoard(4, 10, 68, 15); gotoxy(6, 11) ; cout << "*You used " << s; getch();
+    if(hasDebuff){
+        if(s == "Antidote"){
+            this->poisoned = 0;  hasDebuff = false;
+            currentStatus = 'n'; gotoxy(8,4); cout << "'v'";
+        } else if(s == "Maidenkiss"){
+                level = tempValue;
+                hasDebuff = false; 
+                currentStatus = 'n'; 
+        } else if(s == "MushMario"){
+                HP *= 5; 
+                hasDebuff = false;   
+                currentStatus = 'n';
+        }
     }
     
     if(temp->quantity < 2) balo->removeItem(temp);
     else temp->quantity--;
-}
 
+    
+}
 
 Monster::Monster(string name,int MaxHP, int HP, float Atk, int level, bool turn, string infor) : Attribute(name, MaxHP, HP, Atk, level, turn, infor){};
 
@@ -300,8 +317,8 @@ Monster* Monster::init(){
             Monster* m = new Monster();
                 m->name = temp; temp = "lib/" + temp + ".txt";
                 fstream output(temp);
-                output >> m->HP >> m->Atk >> m->level; output.ignore();
-                output >> m->infor; 
+                output >> m->HP >> m->Atk >> m->level >> m->turn; output.ignore();
+                getline(output, m->infor); 
 
             ms->type.push_back(m);            
         }
@@ -486,10 +503,10 @@ void Game::intro(Knight* knight){
         cout << "NAME OF THE FAILURE: "; getline(cin, knight->name);
         system("cls");  cout << "Please wait..."; Sleep(2000); system("cls");
 
-        dialogue(3, 1, "This is you"); drawModel("Knight"); gotoxy(6, 11); cout << knight->name;;  Sleep(500); 
+        dialogue(3, 1, "This is you"); drawModel('k'); gotoxy(6, 11); cout << knight->name;;  Sleep(500); 
         getch(); dialogue(20, 5, "<----- a failure"); Sleep(1000); system("cls");
         
-        drawModel("Knight"); dialogue(7, 11, knight->name); 
+        drawModel('k'); dialogue(7, 11, knight->name); 
         dialogue(20, 5, "<---- The princess was kidnapped by Bowser.");
         dialogue(20, 7, "<---- and your duty is defeat Bowser and save the princess, that's all.");
         dialogue(20, 9, "<---- Got it?");
@@ -537,15 +554,15 @@ void Game::intro(Knight* knight){
        }
 }
 
-void Game::drawModel(string type){
+void Game::drawModel(char type){
     vector<string> model; bool isEnemy = false;
 
-    if(type == "Knight") model = frame2_0;
-    else if(type == "Frog") model = sprite_frog;
-    else if(type == "Tiny") model = sprite_tiny;
+    if(type == 'k') model = frame2_0;
+    else if(type == 'f') model = sprite_frog;
+    else if(type == 't') model = sprite_tiny;
 
-     if(type == "Monster"){ model = sprite_monster; isEnemy = 1;}
-     else if(type == "NPC"){ model = sprite_NPC; isEnemy = 1;}
+     if(type == 'm'){ model = sprite_monster; isEnemy = 1;}
+     else if(type == 'n'){ model = sprite_NPC; isEnemy = 1;}
 
      if(isEnemy){
         int i = 2;
@@ -560,15 +577,15 @@ void Game::drawModel(string type){
         }
     }    
 };
-void Game::delete_model(string type){
+void Game::delete_model(char type){
     vector<string> model; bool isEnemy = false;
 
-    if(type == "Knight") model = frame4;
-    else if(type == "Frog") model = sprite_frog;
-    else if(type == "Tiny") model = sprite_tiny; 
+    if(type == 'k') model = frame4;
+    else if(type == 'f') model = sprite_frog;
+    else if(type == 't') model = sprite_tiny; 
 
-     if(type == "Monster"){ model = sprite_monster; isEnemy = 1;}
-     else if(type == "NPC"){ model = sprite_NPC; isEnemy = 1;}
+     if(type == 'm'){ model = sprite_monster; isEnemy = 1;}
+     else if(type == 'n'){ model = sprite_NPC; isEnemy = 1;}
 
      if(isEnemy){
         for(int i = 0; i < model.size(); i++){
@@ -613,19 +630,23 @@ int Game::choices_box(){
         c = getch();
 
        switch(c){
+            case 13:
+                out = true;
+            break;
+
            case 'a':
            case 'A':
+           case 75:
                 if(choice > 1) choice--;
            break;
 
            case 'd':
            case 'D':
+           case 77:
                 if(choice < 4) choice++;
             break;
 
-           case 13:
-                out = true;
-            break;
+           
 
            default:
               break;
@@ -749,14 +770,14 @@ void Game::animationAttack(Knight* knight){
     sprite.push_back(frame3);
     sprite.push_back(frame4);
 
-    drawBorder(knight, 1, "Player"); drawModel("Monster");
+    drawBorder(knight, 1, 'a'); drawModel('m');
 
     for(auto x : sprite){
         for(auto y : x){
             gotoxy(4, i++); cout << y;
         }
 
-        Sleep(75); delete_model("Knight"); i=2; 
+        Sleep(50); delete_model('k'); i=2; 
     }
 
     sprite.clear();
@@ -766,14 +787,15 @@ void Game::animationAttack(Knight* knight){
     sprite.push_back(frame14);
     sprite.push_back(frame15);
     
-    drawModel("Knight");
+    drawModel('k');
 
     for(auto x : sprite){
+
         for(auto y : x){
              gotoxy(48, i++); cout << y;  
         }
             Sleep(50); cleanBoard(SCREEN_W/2, 1, SCREEN_W - 1, SCREEN_H/2 - 4); i= 1; 
-            drawModel("Monster");
+            drawModel('m');
     }
 }
 
@@ -871,7 +893,7 @@ void Game::fight(Bullet* bullet, MainCharacter* char_, Knight* knight, Monster* 
         for(int i = 0; i < NUM; i++){
             bullet->collision(i, bullet, char_, knight);
 
-            gotoxy(SCREEN_W/2-2, SCREEN_H/2 + 7); cout << "HP: " << knight->HP << "/" << knight->MaxHP;
+            gotoxy(SCREEN_W/2 - 2, SCREEN_H/2 + 7); cout << "HP: " << knight->HP << "/" << knight->MaxHP << "  ";
         }
 
         for(int i = 0; i < NUM - 1; i++){
@@ -895,7 +917,7 @@ void Game::fight(Bullet* bullet, MainCharacter* char_, Knight* knight, Monster* 
             }
        }
 }
-void Game::drawBorder(Knight* knight, int type_enemy, string type_combat){
+void Game::drawBorder(Knight* knight, int type_enemy, char type_combat){
     
     system("cls");
     TextColor(14);
@@ -946,7 +968,7 @@ void Game::drawBorder(Knight* knight, int type_enemy, string type_combat){
         gotoxy(54, 22); cout << "|      FLEE       |";
         gotoxy(54, 23); cout << "|_________________|";
 
-    if( type_combat == "Player"){
+    if( type_combat == 'a'){
     
         for(int i = 4; i <= SCREEN_W - 4; i++){
             gotoxy(i, 9); cout << "_";
@@ -963,19 +985,19 @@ void Game::drawBorder(Knight* knight, int type_enemy, string type_combat){
         }
     
         TextColor(14);
-            drawModel("Knight");
+            drawModel('k');
 
         switch(type_enemy){
             case 0:
-                drawModel("NPC");
+                drawModel('n');
                 break;
 
             case 1:
-                drawModel("Monster");
+                drawModel('m');
                 break;
         }
 
-    } else if(type_combat == "Monster"){
+    } else if(type_combat == 'd'){
         
         for (int i = SCREEN_W / 2 - 15; i <= SCREEN_W / 2 + 15; i++){
             gotoxy(i, SCREEN_H / 2 - 8);
@@ -996,7 +1018,7 @@ void Game::drawBorder(Knight* knight, int type_enemy, string type_combat){
 }
 void Game::analyse(Monster* monster, int event){ 
     
-    TextColor(14);
+    TextColor(14); cleanBoard(4, 10, 68, 15);
     gotoxy(5, 11); cout << "* " << Event_Name[event];
     gotoxy(19, 11); cout << "ATK " << monster->Atk;
     gotoxy(27, 11); cout << "LEVEL " << monster->level;
@@ -1009,8 +1031,8 @@ void Game::cleanBoard(int x1, int y1, int x2, int y2){
         }
     }
 }
-void Game::interact(int event, Knight* knight, Bullet* bullet, MainCharacter* char_, Item* item, int rescue){
-    
+void Game::interact(int event, Knight* knight, Monster* monster, Bullet* bullet, MainCharacter* char_, Item* item, int rescue){
+
     bool enemyDefeated = false; 
    
     if(event > 10){
@@ -1020,7 +1042,7 @@ void Game::interact(int event, Knight* knight, Bullet* bullet, MainCharacter* ch
             case 12:
             case 13: {
 
-                drawBorder(knight,2, "Player"); 
+                drawBorder(knight,2, 'a'); 
                 gotoxy(55,7); cout << "🍄";
                 gotoxy(6, 11); cout << "You have picked a SUS Mushrom!";
                 
@@ -1076,7 +1098,7 @@ void Game::interact(int event, Knight* knight, Bullet* bullet, MainCharacter* ch
                         case 13:
                             cleanBoard(4, 10, 68, 15);
 
-                                gotoxy(6, 11); cout << "You're poisoned :D";
+                                gotoxy(6, 11); cout << "You're this->poisoned :D";
                                 gotoxy(8, 4); cout << "@_@";
                                 knight->isPoisoned();
 
@@ -1114,73 +1136,120 @@ void Game::interact(int event, Knight* knight, Bullet* bullet, MainCharacter* ch
         
         while(!enemyDefeated){
                 //player turn
-                    while(knight->turn && !enemyDefeated){   
+                    while(knight->turn){  
 
-                            drawBorder(knight, true, "Player");
-                            if(knight->hasDebuff){
-                                if(knight->getStatus() == "Frog") drawModel("Frog");
-                                else if(knight->getStatus() == "Tiny") drawModel("Tiny");
+                            drawBorder(knight, true, 'a');
+
+                            switch(knight->currentStatus){
+                                case 'p':
+                                    gotoxy(6, 11); cout << "*You are in poisoned status effect";
+                                    gotoxy(6, 13); cout << "*Use the Antidote potion to remove poison";
+                                break;
+
+                                case 'f':
+                                    gotoxy(6, 11); cout << "*You are in frog status effect";
+                                    gotoxy(6, 13); cout << "*Use the Maidenkiss potion to remove effect";
+                                break;
+
+                                case 't':
+                                    gotoxy(6, 11); cout << "*You are in tiny status effect";
+                                    gotoxy(6, 13); cout << "*Use the MushMario to remove effect";
+                                break;
+
+                                default:
+                                    gotoxy(6, 11); cout << "*The " << monster->type[event-1]->name << " is blocking your way";
+                                break;                                  
                             }
-                                
-                            gotoxy(6, 11); cout << "*"<< monster->type[event-1]->name << " is blocking your way";
-                            cleanBoard(4, 10, 68, 15);
-                            switch(choices_box()){
-                                case 1:
 
-                                    if(knight->getStatus() == "Frog"){
-                                         
+                            if(knight->hasDebuff){
+                                if(knight->currentStatus == 'f') drawModel('f');
+                                else if(knight->currentStatus == 't') drawModel('t');
+                            }
+                            
+                            switch(choices_box()){
+                                
+                                case 1: 
+                                    
+                                    if(knight->currentStatus == 'f'){
+                                        gotoxy(6, 11); cout << "*You can not fight in froggy mode";
+                                        getch(); knight->turn = 1; 
+ 
                                     } else {
                                         
-                                        animationAttack(knight); 
+                                        animationAttack(knight); gotoxy(SCREEN_W/2+13, 5); cout << knight->level*knight->Atk;
+                                        Sleep(500); gotoxy(SCREEN_W/2+13, 5); cout << "    ";
+                                        
                                         if(knight->Atk >= monster->type[event-1]->HP){
-                                            delete_model("Monster");
-                                            gotoxy(6, 11); cout << "The enemy is defeated";        
-                                            getch();    return;
-                                        } else {
-                                             monster->type[event-1]->HP -= knight->Atk;
+                                            delete_model('m'); gotoxy(6, 11); cout << "*The enemy is defeated";        
+                                            getch(); return;
+                                        } else{
+                                            monster->type[event-1]->HP -= knight->Atk;
+                                            knight->turn = 0;
                                         }
+
                                     }
+
+                                    break;
+
+                                case 2:
+
+                                    analyse(monster->type[event-1], event); getch(); knight->turn = 1;
+                                    break;
+
+                                case 3:
+                                    
+                                   backpack->showItems(knight);                   
+                                   
+
                                 break;
-                            }                          
+
+                                case 4:
+
+                                    cleanBoard(4, 10, 68, 15); 
+                                    gotoxy(6, 11); cout << "Real hero never run!"; getch();
+                                    knight->turn = 1;
+
+                                break;
+                            }  
+
+                        if(!knight->turn) monster->type[event-1]-> turn = 1;
+                         
                     }
                     
-       /*             while(Mons.turn && win != 1){
+                     while(monster->type[event-1]->turn){
 
-                            int damage = Mons.level*Mons.Atk, recent_HP = knight.HP; 
-                            
-                            drawBorder(knight, true, "PLayer"); Sleep(500);
+                            drawBorder(knight, true, 'd'); 
                                 
-                            //play(bullet, char_, knight, Mons);
+                            fight(bullet, char_, knight, monster->type[event-1]);
                             
+                            if(knight->HP <= 0){
+                                
+                                if(backpack->findItem(PhoenixDown)) knight->revieve(backpack);
                             
-                            if(knight.HP <= 0 && phoenixdown > 0){
-                                
-                                gotoxy(8, 4); cout << "x_x" << endl;
-                                gotoxy(50,50);
-                                
-                                Revieve(phoenixdown, knight);
+                                 else gotoxy(6, 11); dialogue(6, 11, "*You died"); getch(); return;
                             } 
-                            
 
-                            knight.Status(remedy, maidenkiss, phoenixdown);
-                            win = knight.HP <= 0 ? 1 : 0;
-
-                            Mons.turn = false; knight.turn = true;
-                }
-
-
-                }
-
-            break;    
-    */}
+                            monster->type[event-1]->turn = 0; knight->turn = 1;
+                    }
+            knight->Status();
+        }
     }
-}    
+}
 
 int main()
 {
+   
+   
     setcursor(0,0); srand(time(NULL)); 
     system("cls");
-    Game::interact(1, knight, nullptr, nullptr, nullptr, 0);
+    backpack->addItem(Antidote);
+    backpack->addItem(Antidote);
+    backpack->addItem(Maidenkiss);
+    MainCharacter* _main = MainCharacter::init();
+    Bullet * _bullet = Bullet::init();
+    Game::interact(2, knight, monster, _bullet, _main, nullptr, 0);
 }
 // 4 68
 // 10 15
+
+

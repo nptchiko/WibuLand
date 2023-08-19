@@ -1,2 +1,2 @@
-100 1 1
+100 1 1 0
 MadBear: a huge brown bear with shape claws

@@ -54,23 +54,23 @@ class Attribute{
 };
 class Knight : public Attribute{
     protected:      
-        int tiny;
-        int poisoned;
-        int frog;
+        int tiny = 0;
+        int poisoned = 0;
+        int frog = 0;
         int tempValue;
-        bool hasDebuff;
-        string currentStatus;
+        
+        
 
     
     public: 
+        bool hasDebuff;
+        char currentStatus;
 
-        static Knight * init(); 
-        
-        string getStatus() const;
+        static Knight * init();
 
-        bool isPoisoned();
-        bool isFrogged();
-        bool getSmallen();
+        void isPoisoned();
+        void isFrogged();
+        void getSmallen();
         void Status(); 
         void useItem(Item* item_to_use, ItemManager* balo); 
         void revieve(ItemManager* balo);  
@@ -146,17 +146,17 @@ class Bullet : public Object {
 class Game{
     public:
        static void dialogue(short x ,short y, string s);
-       static void interact(int event, Knight* knight, Bullet* bullet, MainCharacter* char_, Item* item, int rescue);
+       static void interact(int event, Knight* knight,Monster* monster, Bullet* bullet, MainCharacter* char_, Item* item, int rescue);
        static void cleanBoard(int x, int y, int _x, int _y);
        static void init(string name, Attribute* Object);
        static void analyse(Monster* monster, int event);
-       static void drawBorder(Knight* knight, int type_enemy ,string type_combat);
+       static void drawBorder(Knight* knight, int type_enemy ,char type_combat);
        static void fight(Bullet* bullet, MainCharacter* char_, Knight* knight, Monster* monster);
        static void animationAttack(Knight* knight);
        static int choices_box();
-       static void drawModel(string type);
+       static void drawModel(char type);
        static void intro(Knight* knight);
-       static void delete_model(string type);
+       static void delete_model(char type);
 };
 
 void setcursor(bool visible, DWORD size);
