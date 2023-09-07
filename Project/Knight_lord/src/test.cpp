@@ -844,7 +844,7 @@ void Game::fight(Bullet* bullet, MainCharacter* char_, Knight* knight, Monster* 
                 if(char_->x + 3 <= SCREEN_W/2 + 16)
                     gotoxy(char_->x + 3, char_->y+1); cout << "_";
 
-                if( c == 'w' || 'W'){
+                if( c == 'w' || c == 'W'|| c == 72){
                     gotoxy(char_->x, char_->y + 1); cout << "___";
                 }
             }
@@ -852,25 +852,25 @@ void Game::fight(Bullet* bullet, MainCharacter* char_, Knight* knight, Monster* 
                 char_->erase();
                 gotoxy(char_->x, char_->y ); cout << "____";
 
-                if( c == 's' || c == 'S'){
+                if( c == 's' || c == 'S' || c == 80){
                     gotoxy(char_->x, char_->y); cout << "__";
                 }
             }        
             else char_->erase();
 
-        if( c == 'a' || c == 'A'){
+        if( c == 'a' || c == 'A' || c == 75){
                 if(char_->x > SCREEN_W/2 - 14)
                     char_->x -= 2;
             }        
-            else if( c == 'd' || c == 'D'){
+            else if( c == 'd' || c == 'D' || c == 77){
                 if(char_->x < SCREEN_W/2 + 12)
                     char_->x += 2;
             }
-            else if( c == 'w' || c == 'W'){
+            else if( c == 'w' || c == 'W' || c == 72){
                 if(char_->y > SCREEN_H/2 - 8)
                     char_->y--;
             }
-            else if( c == 's' || c == 'S'){
+            else if( c == 's' || c == 'S' || c == 80){
                 if(char_->y < SCREEN_H/2 + 4)
                     char_->y++;
             }         
@@ -1238,16 +1238,16 @@ void Game::interact(int event, Knight* knight, Monster* monster, Bullet* bullet,
 
 int main()
 {
-   
-   
     setcursor(0,0); srand(time(NULL)); 
     system("cls");
     backpack->addItem(Antidote);
     backpack->addItem(Antidote);
     backpack->addItem(Maidenkiss);
     MainCharacter* _main = MainCharacter::init();
-    Bullet * _bullet = Bullet::init();
+    Bullet* _bullet = Bullet::init();
     Game::interact(2, knight, monster, _bullet, _main, nullptr, 0);
+
+    return 0;
 }
 // 4 68
 // 10 15
