@@ -14,9 +14,8 @@ using namespace std;
 class Animation {
     public:
         sf::Texture texture;
-        float time = 0.0f;
-        float holdTime = 0.3f;
-        int currentFrame = 0;  
+        sf::Texture sideTexture;
+         
 
         void Update(float dt){};
         void Draw(sf::RenderTarget &rt){};
@@ -25,10 +24,13 @@ class Animation {
 class CharacterSprite : public Animation{
 
     private:
-
         static constexpr int nFrames = 4;
+        float time = 0.0f;
+        float holdTime = 0.2f;
+        int currentFrame = 0; 
         sf::IntRect frames[nFrames];
         sf::Sprite _charSprite;
+        sf::Sprite sideSprite;
         sf::Vector2f position; // {width / 2 - 400, 230};
 
     public:
@@ -36,17 +38,26 @@ class CharacterSprite : public Animation{
         CharacterSprite(sf::Vector2f position) : position(position){
             _charSprite.setPosition(position);
             _charSprite.scale(sf::Vector2f(1.5,1.5));
+            sideSprite.setPosition({width / 2.0f + 300.0f, 250.0f});
+            sideSprite.scale(sf::Vector2f(1.5,1.5));
+            
             this->texture.setSmooth(true);
         }
-        void ApplyToSprite(sf::Sprite& sprite){
+        void ApplyToSprite(sf::Sprite& sprite, bool is_sideSprite_included){
             sprite.setTexture(this->texture);
             sprite.setTextureRect(frames[currentFrame]);
+
+            if(is_sideSprite_included){
+                sideSprite.setTexture(this->sideTexture);
+                sideSprite.setTextureRect({currentFrame*66, 0, 66, 56});
+            }
         }
-        void Draw(sf::RenderTarget &rt){
+        void Draw(sf::RenderTarget &rt, bool is_include_sideSprite){
             rt.draw(_charSprite);
+            if(is_include_sideSprite) rt.draw(sideSprite);
         }
 
-        void Update(float dt){
+        void Update(float dt, bool is_sideSprite_included){
             this->time += dt;
 
             if(time >= this->holdTime){
@@ -56,7 +67,7 @@ class CharacterSprite : public Animation{
                 if(++currentFrame >= nFrames)
                     currentFrame = 0;
             }
-            this->ApplyToSprite(_charSprite);
+            this->ApplyToSprite(_charSprite, is_sideSprite_included);
         }
 
         void Idle(){
@@ -66,6 +77,8 @@ class CharacterSprite : public Animation{
         }
         void Attack(){
             this->texture.loadFromFile("sprite/craftpix-net-483897-free-knight-character-sprites-pixel-art/Spritesheet 128/Knight_1/Attack 2.png");
+            this->sideTexture.loadFromFile("sprite/Slash/small_slash_1/slash_spritesheet.png");
+
             for(int i = 0; i < nFrames; ++i)
                 frames[i] = {i*((int)(this->texture.getSize().x))/nFrames, 0, ((int)(this->texture.getSize().x))/nFrames, (int)(this->texture.getSize().y)};
         }
@@ -74,7 +87,9 @@ class CharacterSprite : public Animation{
 class EnemySprite : public Animation{
 
     private:
-
+        float time = 0.0f;
+        float holdTime = 0.2f;
+        int currentFrame = 0; 
         static constexpr int nFrames = 4;
         sf::IntRect frames[nFrames];
         sf::Sprite _enemySprite;
@@ -86,11 +101,6 @@ class EnemySprite : public Animation{
             _enemySprite.setPosition(position);
             _enemySprite.scale(sf::Vector2f(1,1));
             this->texture.setSmooth(true);
-        }
-        void Idle(){
-            Animation::texture.loadFromFile("sprite/enemy1_idie.png");
-            for(int i = 0; i < nFrames; ++i)
-                frames[i] = {i*((int)(this->texture.getSize().x))/nFrames, 0, ((int)(this->texture.getSize().x))/nFrames, (int)(this->texture.getSize().y)};
         }
         void ApplyToSprite(sf::Sprite& sprite){
             sprite.setTexture(this->texture);
@@ -112,8 +122,74 @@ class EnemySprite : public Animation{
             }
             this->ApplyToSprite(_enemySprite);
         }
+        void Idle(){
+            this->texture.loadFromFile("sprite/enemy1_idie.png");
+            for(int i = 0; i < nFrames; ++i)
+                frames[i] = {i*((int)(this->texture.getSize().x))/nFrames, 0, ((int)(this->texture.getSize().x))/nFrames, (int)(this->texture.getSize().y)};
+        }
+        
 };
 
+class QuickAnimation : public Animation{
+
+    private:
+        float time = 0.0f;
+        float holdTime = 0.3f;
+        int currentFrame = 0; 
+        static constexpr int nFrames = 10;
+        sf::IntRect frames[nFrames];
+        sf::Sprite _Sprite;
+        // {width / 2 - 400, 230};
+        int numFrames = 0;
+
+    public:
+        sf::Vector2f position; 
+        QuickAnimation(){};
+        QuickAnimation(sf::Vector2f Position, int numFrames) : position(Position) , numFrames(numFrames){
+            _Sprite.setPosition(position);
+            _Sprite.scale(sf::Vector2f(1.25,1.25));
+            this->texture.setSmooth(true);
+        }
+        void ApplyToSprite(sf::Sprite& sprite){
+            _Sprite.setTexture(this->texture);
+            _Sprite.setTextureRect(frames[currentFrame]);
+        }
+        void Draw(sf::RenderTarget &rt){
+            rt.draw(_Sprite);
+        }
+
+        void Update(float dt, sf::Vector2f position){
+            this->time += dt;
+
+            if(this->time >= this->holdTime){
+
+                this->time -= this->holdTime;
+
+                if(++currentFrame >= numFrames)
+                    currentFrame = 0;
+            }
+            this->ApplyToSprite(_Sprite);
+            _Sprite.setPosition(position);
+        }
+        void Load(string filename){
+            this->texture.loadFromFile(filename);
+            for(int i = 0; i < numFrames; ++i)
+                frames[i] = {i*((int)(this->texture.getSize().x))/numFrames, 0, ((int)(this->texture.getSize().x))/numFrames, (int)(this->texture.getSize().y)};
+        }
+};
+void choice_box(sf::RenderWindow& rt,float dt, QuickAnimation &ani){
+    static int choice = 1;
+
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+            if(choice < 4) choice++;
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+            if(choice > 1) choice--;
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Enter))
+    
+    ani.Update(dt, {(float)(choice*width/5 - 75), (float)(600 + 20.f/2.f)});
+    rt.setFramerateLimit(5); 
+    ani.Draw(rt);
+}
 int main()
 {
     sf::ContextSettings Setting;
@@ -122,8 +198,8 @@ int main()
 
 //--------------------------------BACKGROUND--------------------------//
 
-    sf::RectangleShape background(sf::Vector2f(width,1116)); sf::Texture t;
-    background.setPosition(sf::Vector2f(0, -400));   
+    sf::RectangleShape background(sf::Vector2f(width,998)); sf::Texture t;
+    background.setPosition(sf::Vector2f(0, -210));   
     if(t.loadFromFile("sprite/Background.png")){
         cout << "Loading background successfully..." << endl;
         background.setTexture(&t, false);
@@ -148,108 +224,76 @@ sf::Font font;
     sf::Texture* boxTexture[4];
     sf::RectangleShape* boxSprite[4]; 
     for(int i = 0; i < 4; i++){
-        boxSprite[i] = new sf::RectangleShape(sf::Vector2f(151, 56));
+        boxSprite[i] = new sf::RectangleShape(sf::Vector2f(151.28f, 57));
         boxTexture[i] = new sf::Texture;
         boxSprite[i]->scale(sf::Vector2f(1, 1));
     }
 
     boxTexture[0]->loadFromFile("sprite/Frame/Fight.png");
         boxSprite[0]->setTexture(boxTexture[0], false);
-    boxTexture[1]->loadFromFile("sprite/Frame/ActNoSword.png");
+    boxTexture[1]->loadFromFile("sprite/Frame/Act.png");
         boxSprite[1]->setTexture(boxTexture[1], false);
-    boxTexture[2]->loadFromFile("sprite/Frame/ItemNoSword.png");
+    boxTexture[2]->loadFromFile("sprite/Frame/Item.png");
         boxSprite[2]->setTexture(boxTexture[2], false);
-    boxTexture[3]->loadFromFile("sprite/Frame/RunNoSword.png");
+    boxTexture[3]->loadFromFile("sprite/Frame/Run.png");
         boxSprite[3]->setTexture(boxTexture[3], false);
     
 
-    boxSprite[0]->setPosition(sf::Vector2f(width/2 -18 - 151 - 37 - 151, 600));
-    boxSprite[1]->setPosition(sf::Vector2f(width/2 - 18 - 151, 600));
-    boxSprite[2]->setPosition(sf::Vector2f(width/2 + 18, 600));
-    boxSprite[3]->setPosition(sf::Vector2f(width/2 + 18 + 151 + 37, 600));
+    boxSprite[0]->setPosition(sf::Vector2f(width/5 - 172.5f/2.f, 600));
+    boxSprite[1]->setPosition(sf::Vector2f(2*(width/5) - 172.5f/2.f, 600));
+    boxSprite[2]->setPosition(sf::Vector2f(3*(width/5) - 172.5f/2.f, 600));
+    boxSprite[3]->setPosition(sf::Vector2f(4*(width/5) - 172.5f/2.f, 600));
     
 
  
     
     int j = 0;
 
-int choice = 1;    
+  
 sf::Clock clock;
 
 CharacterSprite _char({width / 2 - 400, 130});
-_char.Attack();
+_char.Idle();
 EnemySprite _enemy({width/2.0f + 325.0f, 220.0f});
 _enemy.Idle();
+QuickAnimation sword({width/5 - 75, 600 + 20.f/2.f}, 5);
+//width/5 - 75, 600 + 20.f/2.f
+sword.Load("sprite/layer_3.png");
+
 
 while (window.isOpen()){
+
+       
 
         sf::Event event; 
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
                 window.close();
-        }
+         }
         
+        window.clear();
+        window.draw(background);
+        for(int i = 0; i < 4; i++)
+        window.draw(*boxSprite[i]);
         
         float dt;
         dt = clock.restart().asSeconds();
 
- 
-        if(sf::Keyboard::isKeyPressed(sf::Keyboard::D) && choice < 4)  choice++;
-        else if(sf::Keyboard::isKeyPressed(sf::Keyboard::A) && choice > 1) choice--;
 
-        switch(choice){
-            case 1:
-                boxTexture[0]->loadFromFile("sprite/Frame/Fight.png");
-                    boxSprite[0]->setTexture(boxTexture[0], false);
-                boxTexture[1]->loadFromFile("sprite/Frame/ActNoSword.png");
-                    boxSprite[1]->setTexture(boxTexture[1], false);
-            break;
-
-            case 2:
-                boxTexture[0]->loadFromFile("sprite/Frame/FightNoSword.png");
-                    boxSprite[0]->setTexture(boxTexture[0], false);
-                boxTexture[1]->loadFromFile("sprite/Frame/Act.png");
-                    boxSprite[1]->setTexture(boxTexture[1], false);
-                boxTexture[2]->loadFromFile("sprite/Frame/ItemNoSword.png");
-                    boxSprite[2]->setTexture(boxTexture[2], false);              
-            break;
-
-            case 3:
-                boxTexture[1]->loadFromFile("sprite/Frame/ActNoSword.png");
-                    boxSprite[1]->setTexture(boxTexture[1], false);
-                boxTexture[2]->loadFromFile("sprite/Frame/Item.png");
-                    boxSprite[2]->setTexture(boxTexture[2], false);
-                boxTexture[3]->loadFromFile("sprite/Frame/RunNoSword.png");
-                    boxSprite[3]->setTexture(boxTexture[3], false);  
-            break;
-
-            case 4:
-                boxTexture[2]->loadFromFile("sprite/Frame/ItemNoSword.png");
-                    boxSprite[2]->setTexture(boxTexture[2], false);
-                boxTexture[3]->loadFromFile("sprite/Frame/Run.png");
-                    boxSprite[3]->setTexture(boxTexture[3], false); 
-            break;
-
-        }
-
-        j++; if(j == 4) j = 0;
-
-        _char.Update(dt);
+        _char.Update(dt, true);
         _enemy.Update(dt);
-
-        window.clear();
-        window.draw(background);
-        _char.Draw(window);
+       choice_box(window, dt, sword);
+        
         _enemy.Draw(window);
-        for(int i = 0; i < 4; i++)
-            window.draw(*boxSprite[i]);
+        _char.Draw(window, false);       
+        
      
         //window.draw(*playerSprite[0]);
         window.display();
         //window.setFramerateLimit(7);
         cout << "frame: " << dt << endl;
-    }
+   }
 
     return 0;
 }
