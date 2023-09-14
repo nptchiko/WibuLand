@@ -15,7 +15,9 @@ class Animation {
     public:
         sf::Texture texture;
         sf::Texture sideTexture;
-         
+        string currentAnimation;
+        float time = 0.0f;
+        int currentFrame = 0; 
 
         void Update(float dt){};
         void Draw(sf::RenderTarget &rt){};
@@ -24,14 +26,13 @@ class Animation {
 class CharacterSprite : public Animation{
 
     private:
-        static constexpr int nFrames = 4;
-        float time = 0.0f;
         float holdTime = 0.2f;
-        int currentFrame = 0; 
+        static constexpr int nFrames = 4;
         sf::IntRect frames[nFrames];
         sf::Sprite _charSprite;
         sf::Sprite sideSprite;
         sf::Vector2f position; // {width / 2 - 400, 230};
+        bool is_sideSprite_included = false;
 
     public:
         CharacterSprite(){};
@@ -43,53 +44,57 @@ class CharacterSprite : public Animation{
             
             this->texture.setSmooth(true);
         }
-        void ApplyToSprite(sf::Sprite& sprite, bool is_sideSprite_included){
+        void ApplyToSprite(sf::Sprite& sprite){
             sprite.setTexture(this->texture);
             sprite.setTextureRect(frames[currentFrame]);
 
-            if(is_sideSprite_included){
+            if(this->is_sideSprite_included){
                 sideSprite.setTexture(this->sideTexture);
                 sideSprite.setTextureRect({currentFrame*66, 0, 66, 56});
             }
         }
-        void Draw(sf::RenderTarget &rt, bool is_include_sideSprite){
+        void Draw(sf::RenderTarget &rt){
             rt.draw(_charSprite);
-            if(is_include_sideSprite) rt.draw(sideSprite);
+            if(this->is_sideSprite_included) rt.draw(sideSprite);
         }
 
-        void Update(float dt, bool is_sideSprite_included){
+        void Update(float dt){
             this->time += dt;
 
             if(time >= this->holdTime){
 
                 this->time -= this->holdTime;
 
-                if(++currentFrame >= nFrames)
+                if(++currentFrame >= nFrames){
+                    if(this->currentAnimation != "Idle")
+                        this->Idle();
                     currentFrame = 0;
+                }
+                
             }
-            this->ApplyToSprite(_charSprite, is_sideSprite_included);
+            this->ApplyToSprite(_charSprite);
         }
 
         void Idle(){
             this->texture.loadFromFile("sprite/craftpix-net-483897-free-knight-character-sprites-pixel-art/Spritesheet 128/Knight_1/Idle.png");
             for(int i = 0; i < nFrames; ++i)
                 frames[i] = {i*((int)(this->texture.getSize().x))/nFrames, 0, ((int)(this->texture.getSize().x))/nFrames, (int)(this->texture.getSize().y)};
+            this->currentAnimation = "Idle"; is_sideSprite_included = false;
         }
         void Attack(){
             this->texture.loadFromFile("sprite/craftpix-net-483897-free-knight-character-sprites-pixel-art/Spritesheet 128/Knight_1/Attack 2.png");
             this->sideTexture.loadFromFile("sprite/Slash/small_slash_1/slash_spritesheet.png");
-
             for(int i = 0; i < nFrames; ++i)
                 frames[i] = {i*((int)(this->texture.getSize().x))/nFrames, 0, ((int)(this->texture.getSize().x))/nFrames, (int)(this->texture.getSize().y)};
+            this->currentAnimation = "Attack"; is_sideSprite_included = true;
+            this->currentFrame = 0;
         }
         
 };
 class EnemySprite : public Animation{
 
     private:
-        float time = 0.0f;
         float holdTime = 0.2f;
-        int currentFrame = 0; 
         static constexpr int nFrames = 4;
         sf::IntRect frames[nFrames];
         sf::Sprite _enemySprite;
@@ -117,8 +122,14 @@ class EnemySprite : public Animation{
 
                 this->time -= this->holdTime;
 
-                if(++currentFrame >= nFrames)
-                    currentFrame = 0;
+                if(++currentFrame >= nFrames){
+                  if(++currentFrame >= nFrames){
+                    if(this->currentAnimation != "Idle")
+                        this->Idle();
+                    currentFrame = 0;              
+                }
+                }
+
             }
             this->ApplyToSprite(_enemySprite);
         }
@@ -126,6 +137,8 @@ class EnemySprite : public Animation{
             this->texture.loadFromFile("sprite/enemy1_idie.png");
             for(int i = 0; i < nFrames; ++i)
                 frames[i] = {i*((int)(this->texture.getSize().x))/nFrames, 0, ((int)(this->texture.getSize().x))/nFrames, (int)(this->texture.getSize().y)};
+            this->currentAnimation = "Idle";
+
         }
         
 };
@@ -133,19 +146,18 @@ class EnemySprite : public Animation{
 class QuickAnimation : public Animation{
 
     private:
-        float time = 0.0f;
-        float holdTime = 0.3f;
+        float holdTime = 0.2f;
         int currentFrame = 0; 
-        static constexpr int nFrames = 10;
+        static constexpr int nFrames = 50;
         sf::IntRect frames[nFrames];
         sf::Sprite _Sprite;
         // {width / 2 - 400, 230};
-        int numFrames = 0;
+        sf::Vector2i numFrames;
 
     public:
         sf::Vector2f position; 
         QuickAnimation(){};
-        QuickAnimation(sf::Vector2f Position, int numFrames) : position(Position) , numFrames(numFrames){
+        QuickAnimation(sf::Vector2f Position, sf::Vector2i numFrames) : position(Position) , numFrames(numFrames){
             _Sprite.setPosition(position);
             _Sprite.scale(sf::Vector2f(1.25,1.25));
             this->texture.setSmooth(true);
@@ -165,30 +177,42 @@ class QuickAnimation : public Animation{
 
                 this->time -= this->holdTime;
 
-                if(++currentFrame >= numFrames)
-                    currentFrame = 0;
+                if(++currentFrame >= numFrames.x*numFrames.y)
+                     currentFrame = 0;
             }
             this->ApplyToSprite(_Sprite);
             _Sprite.setPosition(position);
+            
         }
         void Load(string filename){
             this->texture.loadFromFile(filename);
-            for(int i = 0; i < numFrames; ++i)
-                frames[i] = {i*((int)(this->texture.getSize().x))/numFrames, 0, ((int)(this->texture.getSize().x))/numFrames, (int)(this->texture.getSize().y)};
+            for(int i = 0; i < numFrames.y; i++)
+                for(int  j = 0; j < numFrames.x; j++)
+                    frames[j + (numFrames.x)*i] = { (j + (numFrames.x)*i)*((int)(this->texture.getSize().x))/(numFrames.x*numFrames.y), 0,
+                                                  ((int)(this->texture.getSize().x))/(numFrames.x*numFrames.y),
+                                                  (int)(this->texture.getSize().y)};
         }
 };
-void choice_box(sf::RenderWindow& rt,float dt, QuickAnimation &ani){
+void choice_box(sf::RenderWindow& rt,float dt, QuickAnimation &ani, CharacterSprite& _ch){
     static int choice = 1;
-
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
             if(choice < 4) choice++;
     if(sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             if(choice > 1) choice--;
-    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Enter))
-    
+    if(sf::Keyboard::isKeyPressed(sf::Keyboard::Enter)){
+         rt.setFramerateLimit(30); 
+        switch(choice){
+            case 1:
+                _ch.Attack();
+            break;
+        }
+    }
     ani.Update(dt, {(float)(choice*width/5 - 75), (float)(600 + 20.f/2.f)});
-    rt.setFramerateLimit(5); 
+
+    _ch.Update(dt); 
+    rt.setFramerateLimit(10); 
     ani.Draw(rt);
+    
 }
 int main()
 {
@@ -198,9 +222,9 @@ int main()
 
 //--------------------------------BACKGROUND--------------------------//
 
-    sf::RectangleShape background(sf::Vector2f(width,998)); sf::Texture t;
+    sf::RectangleShape background(sf::Vector2f(width,928)); sf::Texture t;
     background.setPosition(sf::Vector2f(0, -210));   
-    if(t.loadFromFile("sprite/Background.png")){
+    if(t.loadFromFile("sprite/Background3.png")){
         cout << "Loading background successfully..." << endl;
         background.setTexture(&t, false);
     } else cout << "Loading failed..." << endl;
@@ -256,10 +280,9 @@ CharacterSprite _char({width / 2 - 400, 130});
 _char.Idle();
 EnemySprite _enemy({width/2.0f + 325.0f, 220.0f});
 _enemy.Idle();
-QuickAnimation sword({width/5 - 75, 600 + 20.f/2.f}, 5);
+QuickAnimation sword({width/5 - 75, 600 + 20.f/2.f}, {5,2});
 //width/5 - 75, 600 + 20.f/2.f
 sword.Load("sprite/layer_3.png");
-
 
 while (window.isOpen()){
 
@@ -281,13 +304,13 @@ while (window.isOpen()){
         dt = clock.restart().asSeconds();
 
 
-        _char.Update(dt, true);
+       
         _enemy.Update(dt);
-       choice_box(window, dt, sword);
+      
         
         _enemy.Draw(window);
-        _char.Draw(window, false);       
-        
+        _char.Draw(window);       
+         choice_box(window, dt, sword, _char);
      
         //window.draw(*playerSprite[0]);
         window.display();
