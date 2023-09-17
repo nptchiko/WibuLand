@@ -223,8 +223,9 @@ int main()
 //--------------------------------BACKGROUND--------------------------//
 
     sf::RectangleShape background(sf::Vector2f(width,928)); sf::Texture t;
+    
     background.setPosition(sf::Vector2f(0, -210));   
-    if(t.loadFromFile("sprite/Background3.png")){
+    if(t.loadFromFile("sprite/Background4.png")){
         cout << "Loading background successfully..." << endl;
         background.setTexture(&t, false);
     } else cout << "Loading failed..." << endl;
