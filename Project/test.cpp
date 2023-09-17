@@ -9,35 +9,50 @@ class Audio{
     private:
         sf::Sound sound;
         sf::SoundBuffer sb;
-        
     
     public:
-        float delaytime;
 
         static Audio* init(string filename){
             Audio* a = new Audio();
                 a->sb.loadFromFile(filename);
                 a->sound.setBuffer(a->sb);
-                a->delaytime = a->sb.getDuration().asSeconds();
             return a;
         }
         void play(){
             this->sound.play();
         }
-        void Update(float dt, float extraTime){
-            if(this->delaytime == this->sb.getDuration().asSeconds())
-                this->delaytime += extraTime;
+        void pause(){
+            this->sound.pause();
+        }
+        float GetDuration() const {
+            return this->sb.getDuration().asSeconds();
+        }
+        void Update(float Pre_Sound_Dur, float dt){
+            static float loading_time = 0;
 
-            if(this->delaytime > 0)
-                this->delaytime -= dt;
-
-            if(this->delaytime <= 0){
-                this->delaytime = this->sb.getDuration().asSeconds();
-                play();
+            if(loading_time < Pre_Sound_Dur) loading_time += dt;
+            else if(loading_time >= Pre_Sound_Dur){
+                play(); loading_time = 0;
+                return ;
             }
+
+        }
+        void playRespectively(vector<Audio*> sfx, float dt){
+        
+            static float LOADING_TIME = 0; static int index = 0;
+            if(index >= sfx.size()) return;
+
+            if(LOADING_TIME + dt >= sfx[index]->GetDuration() && index != 0){
+                LOADING_TIME = 0; ++index;
+            } else if(LOADING_TIME + dt >= sfx[sfx.size()- 1]->GetDuration()){
+                sfx[sfx.size()- 1]->Update(sfx.size()- 2, dt);
+                LOADING_TIM
+            }
+
+            if(!index){ sfx[index]->Update(0, dt); ++index;}
+            else sfx[index]->Update(sfx[index - 1]->GetDuration(), dt);
         }
 };
-
 
 int main(){
    
@@ -68,9 +83,9 @@ int main(){
     Gawr_Blaster.push_back(Audio::init("sprite/Sounds_gasterintro.wav"));
     Gawr_Blaster.push_back(Audio::init("sprite/Sounds_gasterfire.wav"));
 
-     
+    Audio* manager = new Audio();
     
-
+    
     float time = 0;  sf::Clock clock;     
 
     while (window.isOpen()){
@@ -79,12 +94,15 @@ int main(){
             if (event.type == sf::Event::Closed)
                 window.close();
             else if(event.type == sf::Event::MouseButtonPressed){
-                   Gawr_Blaster[0]->play(); Sleep(1000); Gawr_Blaster[1]->play();
+                   
                 }
             }
         float dt;
         dt = clock.restart().asSeconds();    
-        
+        cout << "fps: " << dt << endl;
+       
+        manager->playRespectively(Gawr_Blaster, dt);
+       
 
         beam.move({(float)50.0*cos(time),(float)50.0*sin(time)});
         beam.rotate(10);
@@ -101,6 +119,6 @@ int main(){
         window.setFramerateLimit(60);
  
     }
-
+    
     return 0;
 }
