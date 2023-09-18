@@ -45,7 +45,7 @@ class Audio{
             if(LOADING_TIME + dt >= sfx[index]->GetDuration() && index != 0){
                 LOADING_TIME = 0; ++index;
             } else if(LOADING_TIME + dt >= sfx[sfx.size()- 1]->GetDuration()){
-                sfx[sfx.size()- 1]->Update(sfx.size()- 2, dt);
+                sfx[sfx.size()- 1]->Update(sfx[sfx.size()- 2]->GetDuration(), dt);
                 LOADING_TIM
             }
 
