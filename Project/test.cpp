@@ -4,18 +4,24 @@
 #include <cmath>
 #include <windows.h>
 #include <vector>
+#include <cassert>
+#include <list>
 using namespace std;
 class Audio{
     private:
         sf::Sound sound;
         sf::SoundBuffer sb;
-    
+
+    public:
+        bool isPlayed;   
+
     public:
 
         static Audio* init(string filename){
             Audio* a = new Audio();
                 a->sb.loadFromFile(filename);
                 a->sound.setBuffer(a->sb);
+                a->isPlayed = false;
             return a;
         }
         void play(){
@@ -23,37 +29,50 @@ class Audio{
         }
         void pause(){
             this->sound.pause();
+           
         }
         float GetDuration() const {
             return this->sb.getDuration().asSeconds();
         }
-        void Update(float Pre_Sound_Dur, float dt){
+        sf::SoundSource::Status getStatus(){
+            return this->sound.getStatus();
+        } 
+        void delay(float Pre_Sound_Dur, float dt){
             static float loading_time = 0;
 
-            if(loading_time < Pre_Sound_Dur) loading_time += dt;
+            if(loading_time < Pre_Sound_Dur && loading_time >= 0) loading_time += dt;
             else if(loading_time >= Pre_Sound_Dur){
-                play(); loading_time = 0;
-                return ;
+                play(); loading_time = -1;
             }
 
-        }
-        void playRespectively(vector<Audio*> sfx, float dt){
-        
-            static float LOADING_TIME = 0; static int index = 0;
-            if(index >= sfx.size()) return;
-
-            if(LOADING_TIME + dt >= sfx[index]->GetDuration() && index != 0){
-                LOADING_TIME = 0; ++index;
-            } else if(LOADING_TIME + dt >= sfx[sfx.size()- 1]->GetDuration()){
-                sfx[sfx.size()- 1]->Update(sfx[sfx.size()- 2]->GetDuration(), dt);
-                LOADING_TIME = 0, ++index;
-            }
-
-            if(!index){ sfx[index]->Update(0, dt); ++index;}
-            else sfx[index]->Update(sfx[index - 1]->GetDuration(), dt);
         }
 };
 
+class AudioManager{
+    private:
+        sf::SoundSource::Status current_status = sf::SoundSource::Stopped;
+    public:
+        void Merge_Play(list<Audio*> radio){
+            
+
+            if(radio.front()->getStatus() == sf::SoundSource::Stopped && this->current_status == sf::SoundSource::Playing){
+
+                //radio.remove_if( [](Audio* s){return (s->getStatus() == sf::SoundSource::Stopped);});
+                radio.pop_front();
+
+                if(radio.empty()){
+                    return;
+                } 
+                this->current_status = sf::SoundSource::Stopped;
+            }
+
+            if(radio.front()->getStatus() == sf::SoundSource::Stopped && radio.front()->isPlayed == false){
+                radio.front()->play(); this->current_status = sf::SoundSource::Playing;
+                radio.front()->isPlayed = true;
+            }
+        }
+      
+};
 int main(){
    
     sf::ContextSettings Setting;
@@ -78,14 +97,15 @@ int main(){
     beam.setOrigin({57.5, 66});
     beam.setPosition({460,340}); 
     
-    vector<Audio*> Gawr_Blaster;
+    list<Audio*> Gawr_Blaster;
 
     Gawr_Blaster.push_back(Audio::init("sprite/Sounds_gasterintro.wav"));
     Gawr_Blaster.push_back(Audio::init("sprite/Sounds_gasterfire.wav"));
 
-    Audio* manager = new Audio();
-    
-    
+
+    AudioManager radio;
+     
+
     float time = 0;  sf::Clock clock;     
 
     while (window.isOpen()){
@@ -93,15 +113,19 @@ int main(){
         while (window.pollEvent(event)){
             if (event.type == sf::Event::Closed)
                 window.close();
-            else if(event.type == sf::Event::MouseButtonPressed){
-                   
-                }
-            }
+        }
         float dt;
         dt = clock.restart().asSeconds();    
-        cout << "fps: " << dt << endl;
+      
        
-        manager->playRespectively(Gawr_Blaster, dt);
+       // manager->playRespectively(Gawr_Blaster, dt);
+
+    
+
+       radio.Merge_Play(Gawr_Blaster);  
+      
+      //  else if(Gawr_Blaster[0]->Status(sf::SoundSource::Stopped)) Gawr_Blaster[1]->play();    
+
        
 
         beam.move({(float)50.0*cos(time),(float)50.0*sin(time)});

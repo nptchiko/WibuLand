@@ -1,16 +1,19 @@
 #include "bin/knight.h"
 #include "bin/backpack.h"
+
 #include "bin/monster.h"
 
 void gotoxy(short x, short y){
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     COORD a = {x, y}; SetConsoleCursorPosition(h, a);
+
 }
 void TextColor(int x){
     HANDLE h = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(h, x); 
 }
 void setcursor(bool visible, DWORD size){
+
 	
     if(size == 0)
 		size = 20;	
@@ -356,6 +359,7 @@ void Knight::revieve(ItemManager* balo){
     
     while(1){
         char c = getch();
+
 
         switch(c){
             case 13:
@@ -801,7 +805,7 @@ void Game::animationAttack(Knight* knight){
 
 void Game::fight(Bullet* bullet, MainCharacter* char_, Knight* knight, Monster* monster){
     
-    int count = 50;
+    int count = 200;
 
     int damage = monster->level*monster->Atk;
 
@@ -881,11 +885,12 @@ void Game::fight(Bullet* bullet, MainCharacter* char_, Knight* knight, Monster* 
 
         char_->draw();
         
+
         for(int i = 0; i < NUM; i++)
             (bullet+i)->draw();
 
         
-       Sleep(15);
+       Sleep(10);
 
         for(int i = 0; i < NUM; i++)
             (bullet+i)->erase();

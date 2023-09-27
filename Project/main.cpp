@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <iostream>
+#include <list>
 #include <conio.h>
 #include <windows.h>
 using namespace std;
@@ -10,7 +11,9 @@ using namespace std;
 
 
 //green_point 320
-
+//hit box area
+// w 352    h 351
+// x 287    y 222
 class Animation {
     public:
         sf::Texture texture;
@@ -146,20 +149,21 @@ class EnemySprite : public Animation{
 class QuickAnimation : public Animation{
 
     private:
-        float holdTime = 0.2f;
+        float holdTime = 0.05f;
         int currentFrame = 0; 
         static constexpr int nFrames = 50;
         sf::IntRect frames[nFrames];
         sf::Sprite _Sprite;
         // {width / 2 - 400, 230};
         sf::Vector2i numFrames;
+        bool loop = false;
 
     public:
-        sf::Vector2f position; 
+
         QuickAnimation(){};
-        QuickAnimation(sf::Vector2f Position, sf::Vector2i numFrames) : position(Position) , numFrames(numFrames){
-            _Sprite.setPosition(position);
-            _Sprite.scale(sf::Vector2f(1.25,1.25));
+        QuickAnimation(sf::Vector2f Position, sf::Vector2i numFrames, bool loop) : numFrames(numFrames), loop(loop){
+            _Sprite.setPosition(Position);
+            _Sprite.scale(sf::Vector2f(1.0,1.0));
             this->texture.setSmooth(true);
         }
         void ApplyToSprite(sf::Sprite& sprite){
@@ -167,9 +171,11 @@ class QuickAnimation : public Animation{
             _Sprite.setTextureRect(frames[currentFrame]);
         }
         void Draw(sf::RenderTarget &rt){
-            rt.draw(_Sprite);
+            if(currentFrame >= this->numFrames.x*this->numFrames.y && !this->loop){}
+            else rt.draw(_Sprite);
         }
-
+        sf::Vector2f getPosition() const { return _Sprite.getPosition(); }  
+        bool IsLoop() const { return this->loop; }
         void Update(float dt, sf::Vector2f position){
             this->time += dt;
 
@@ -177,7 +183,7 @@ class QuickAnimation : public Animation{
 
                 this->time -= this->holdTime;
 
-                if(++currentFrame >= numFrames.x*numFrames.y)
+                if(++currentFrame >= this->numFrames.x*this->numFrames.y && this->loop)
                      currentFrame = 0;
             }
             this->ApplyToSprite(_Sprite);
@@ -186,11 +192,21 @@ class QuickAnimation : public Animation{
         }
         void Load(string filename){
             this->texture.loadFromFile(filename);
-            for(int i = 0; i < numFrames.y; i++)
-                for(int  j = 0; j < numFrames.x; j++)
-                    frames[j + (numFrames.x)*i] = { (j + (numFrames.x)*i)*((int)(this->texture.getSize().x))/(numFrames.x*numFrames.y), 0,
-                                                  ((int)(this->texture.getSize().x))/(numFrames.x*numFrames.y),
-                                                  (int)(this->texture.getSize().y)};
+
+            int width_t = (this->texture.getSize().x) , height_t = (this->texture.getSize().y);
+
+            if(this->numFrames.x == 1) height_t /= (this->numFrames.y*this->numFrames.x);
+            else width_t /= (this->numFrames.x*this->numFrames.y);
+
+            for(int i = 0; i < this->numFrames.y; i++)
+                for(int j = 0; j < this->numFrames.x; j++)
+                    frames[j + (this->numFrames.x)*i] = { j*width_t, i*height_t, width_t, height_t };
+        }
+};
+class AnimationManager{
+    public:
+        void multiAnimation(list<Animation*> _animation){
+
         }
 };
 void choice_box(sf::RenderWindow& rt,float dt, QuickAnimation &ani, CharacterSprite& _ch){
@@ -222,8 +238,9 @@ int main()
 
 //--------------------------------BACKGROUND--------------------------//
 
-    sf::RectangleShape background(sf::Vector2f(width,928)); sf::Texture t;
-    
+    sf::RectangleShape background(sf::Vector2f(928,928)); sf::Texture t;
+   
+
     background.setPosition(sf::Vector2f(0, -210));   
     if(t.loadFromFile("sprite/Background4.png")){
         cout << "Loading background successfully..." << endl;
@@ -281,13 +298,20 @@ CharacterSprite _char({width / 2 - 400, 130});
 _char.Idle();
 EnemySprite _enemy({width/2.0f + 325.0f, 220.0f});
 _enemy.Idle();
-QuickAnimation sword({width/5 - 75, 600 + 20.f/2.f}, {5,2});
+QuickAnimation sword({width/5 - 75, 600 + 20.f/2.f}, {5,2}, true);
 //width/5 - 75, 600 + 20.f/2.f
 sword.Load("sprite/layer_3.png");
+QuickAnimation gawr_blaster({0, 320}, {1, 7}, 1); 
+gawr_blaster.Load("sprite/Gawr_Blaster_Spritesheet.png");
+
+sf::Texture _gura_texture; _gura_texture.loadFromFile("sprite/Gawr_intro1.png");
+sf::RectangleShape _gura_sprite(sf::Vector2f(_gura_texture.getSize().x, _gura_texture.getSize().y));
+
+_gura_sprite.setTexture(&_gura_texture); _gura_sprite.setPosition(gawr_blaster.getPosition());
+_gura_sprite.setOrigin({57.5, 66}); _gura_sprite.setRotation(_gura_sprite.getRotation() - 180);
 
 while (window.isOpen()){
 
-       
 
         sf::Event event; 
         while (window.pollEvent(event))
@@ -304,19 +328,21 @@ while (window.isOpen()){
         float dt;
         dt = clock.restart().asSeconds();
 
+        if(_gura_sprite.getPosition().x < 100.f) _gura_sprite.move(dt + 0.5, 0);
 
-       
+        if(_gura_sprite.getRotation() > 1) _gura_sprite.rotate(0.725);        
+
         _enemy.Update(dt);
-      
-        
+       // gawr_blaster.Update(dt, gawr_blaster.getPosition());
+       
         _enemy.Draw(window);
         _char.Draw(window);       
-         choice_box(window, dt, sword, _char);
-     
-        //window.draw(*playerSprite[0]);
+        //choice_box(window, dt, sword, _char);
+       // gawr_blaster.Draw(window);
+        
+        window.draw(_gura_sprite);
         window.display();
         //window.setFramerateLimit(7);
-        cout << "frame: " << dt << endl;
    }
 
     return 0;

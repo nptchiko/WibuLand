@@ -19,7 +19,7 @@ using namespace std;
 #define SCREEN_W 72
 #define SCREEN_H 24
 
-#define NUM 2
+#define NUM 20
 
 #define Model_b_X_Length 1
 #define Model_b_Y_Length 1
